@@ -1,0 +1,11 @@
+2
+lineitem_p_partkey#0
+part#200000
+2
+lineitem_p_partkey l_partkey 200000
+lineitem_p_partkey l_shipinstruct 4
+lineitem_p_partkey l_shipmode 7
+lineitem_p_partkey p_container 1
+lineitem_p_partkey p_partkey 0
+part p_container 40
+part p_partkey 200000

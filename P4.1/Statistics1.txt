@@ -1,0 +1,6 @@
+1
+supplier_partsupp#800000
+2
+ps_suppkey ps_suppkey 0
+supplier_partsupp ps_suppkey 10000
+supplier_partsupp s_suppkey 10000
