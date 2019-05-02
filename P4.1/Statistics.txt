@@ -1,11 +1,32 @@
-2
-lineitem_p_partkey#0
+6
+nation#25
 part#200000
-2
-lineitem_p_partkey l_partkey 200000
-lineitem_p_partkey l_shipinstruct 4
-lineitem_p_partkey l_shipmode 7
-lineitem_p_partkey p_container 1
-lineitem_p_partkey p_partkey 0
-part p_container 40
+partsupp#800000
+region#5
+s_p_ps_n_r#3200
+supplier#10000
+10
+n.n_nationkey n.n_nationkey 0
+nation n_nationkey 25
+nation n_regionkey 5
 part p_partkey 200000
+part p_size 50
+partsupp ps_partkey 200000
+partsupp ps_suppkey 10000
+ps.ps_partkey ps.ps_partkey 0
+ps.ps_suppkey ps.ps_suppkey 0
+r.r_regionkey r.r_regionkey 0
+region r_name 5
+region r_regionkey 5
+s_p_ps_n_r n.n_nationkey 25
+s_p_ps_n_r n.n_regionkey 5
+s_p_ps_n_r p.p_partkey 200000
+s_p_ps_n_r p.p_size 50
+s_p_ps_n_r ps.ps_partkey 200000
+s_p_ps_n_r ps.ps_suppkey 10000
+s_p_ps_n_r r.r_name 5
+s_p_ps_n_r r.r_regionkey 5
+s_p_ps_n_r s.s_nationkey 25
+s_p_ps_n_r s.s_suppkey 10000
+supplier s_nationkey 25
+supplier s_suppkey 10000

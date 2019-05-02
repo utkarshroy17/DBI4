@@ -48,7 +48,9 @@ public:
 	Type FindType (char *attName);
 
 	// this reads the specification for the schema in from a file
-	Schema (char *fName, char *relName);
+	Schema(char *fName, char *relName, const char* alias = "");
+
+	Schema(const Schema& left, const Schema& right);
 
 	// this composes a schema instance in-memory
 	Schema (char *fName, int num_atts, Attribute *atts);

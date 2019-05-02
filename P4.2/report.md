@@ -1,5 +1,5 @@
-# COP 6726 - Project 4(Part I)
-Statistical Estimation
+# COP 6726 - Project 4(Part II)
+Query Compilation and Optimization
 
 ## Group Info
   - Anand Chinnappan Mani,  UFID: 7399-9125
@@ -8,11 +8,16 @@ Statistical Estimation
 ## Instructions
 ```
 make clean 
-make test.out
-./a4-1.out [0-11]
+make main
+./main
 ```
 ## Test cases
-All 12 test case scenarios passed.
+Enter CNF and press ctrl+D
+
+CNF -	SELECT SUM (ps.ps_supplycost)
+		FROM part AS p, supplier AS s, partsupp AS ps
+		WHERE (p.p_partkey = ps.ps_partkey) AND
+		(s.s_acctbal > 2500.0)
 
 ## Instructions for GTest
 
@@ -24,6 +29,6 @@ make gtest.out
 
 ## GTest
 
-All queries part of gtest, ran successfully
+Run unit test for separate modules of the Query Plan
 
 

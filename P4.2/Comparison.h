@@ -59,6 +59,8 @@ public:
 	// based upon ALL of their attributes
 	OrderMaker(Schema *schema);
 
+	void growFromParseTree(NameList* gAtts, Schema* inputSchema);
+
 	// print to the screen
 	void Print ();
 };

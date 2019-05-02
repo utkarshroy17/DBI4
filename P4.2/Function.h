@@ -1,13 +1,21 @@
+#ifndef FUNCTION_H_
+#define FUNCTION_H_
+
 #include "Record.h"
 #include "ParseTree.h"
 
-enum AritmeticOp {
-	PushInt, PushDouble, ToDouble, IntUnaryMinus, IntMinus, IntPlus,
-	IntDiv, IntMul, DblUnaryMinus, DblMinus, DblPlus, DblDiv, DblMul
+#define MAX_DEPTH 100
+
+
+enum ArithOp {
+	PushInt, PushDouble, ToDouble, ToDouble2Down,
+	IntUnaryMinus, IntMinus, IntPlus, IntDivide, IntMultiply,
+	DblUnaryMinus, DblMinus, DblPlus, DblDivide, DblMultiply
 };
 
 struct Arithmetic {
-	AritmeticOp *opList;
+
+	ArithOp myOp;
 	int recInput;
 	void *litInput;
 };
@@ -25,11 +33,16 @@ public:
 
 	Function();
 
+	// this grows the specified function from a parse tree and converts
+	// it into an accumulator-based computation over the attributes in
+	// a record with the given schema; the record "literal" is produced
+	// by the GrowFromParseTree method
 	void GrowFromParseTree(struct FuncOperator *parseTree, Schema &mySchema);
 
-	Type BuildRecursively(struct FuncOperator *parseTree, Schema &mySchema);
+	Type RecursivelyBuild(struct FuncOperator *parseTree, Schema &mySchema);
 
-	void print();
+	// prints out the function to the screen
+	void Print();
 
 	Type Apply(Record &toMe, int &intResult, double &doubleResult);
 
@@ -40,7 +53,7 @@ public:
 		return returnsInt ? intResult : doubleResult;
 	}
 
-	Type resultType() { 
-		return returnsInt ? Int : Double; 
-	}
+	Type resultType() const { return returnsInt ? Int : Double; }
 };
+
+#endif

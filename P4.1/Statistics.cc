@@ -68,8 +68,7 @@ void Statistics::CopyRel(char *oldName, char *newName)
 void Statistics::Read(char *fromWhere)
 {
 	string file(fromWhere);
-
-		
+			
 
 	int relCountInRel, relCountInAttr;
 
@@ -311,6 +310,10 @@ double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numT
 	else {
 		double leftTupCount = relMap[leftRel];
 		resultEstimate = leftTupCount * resAndFactor;
+	}
+
+	for (map<string, int>::iterator it1 = relOpMap.begin(); it1 != relOpMap.end(); it1++) {
+		cout << it1->first << "->" << it1->second << endl;
 	}
 
 	if (isApply) {

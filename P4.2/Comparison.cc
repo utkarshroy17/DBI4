@@ -116,6 +116,12 @@ void OrderMaker :: Print () {
 	}
 }
 
+void OrderMaker::growFromParseTree(NameList* gAtts, Schema* inputSchema) {
+	for (; gAtts; gAtts = gAtts->next, numAtts++) {	
+		whichTypes[numAtts] = inputSchema->FindType(gAtts->name);
+	}
+}
+
 
 int CNF :: GetSortOrders (OrderMaker &left, OrderMaker &right) {
 

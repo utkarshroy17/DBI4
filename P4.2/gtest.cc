@@ -8,7 +8,7 @@
 
 extern "C" struct YY_BUFFER_STATE *yy_scan_string(const char*);
 extern "C" int yyparse(void);
-extern struct AndList *final;
+struct AndList *final;
 
 char *fileName = "Statistics1.txt";
 

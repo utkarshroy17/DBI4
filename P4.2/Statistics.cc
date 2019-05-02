@@ -1,385 +1,273 @@
 #include "Statistics.h"
-#include <map>
-#include <string.h>
-#include <fstream>
-#include <vector>
-#include <sstream>
-#include <iostream>
-#include <algorithm>
+#include <climits>
+
 #include <stdio.h>
-#include <set>
-#include <math.h>
-#define DEP
+#include <cstring>
+#include <iostream>
+#include <stdlib.h> 
+#include <fstream>
+Statistics::Statistics() {}
 
-Statistics::Statistics()
-{
-	calledFromApply = false;
-	isApply = false;
-}
-Statistics::Statistics(Statistics &copyMe)
-{
-	this->relMap = copyMe.relMap;
-	this->attrMap = copyMe.attrMap;
-}
-Statistics::~Statistics()
-{
-}
+Statistics::Statistics(Statistics &copyMe) {
+	for (map<string, attrMap>::iterator it1 = copyMe.relMap.begin(); it1 != copyMe.relMap.end(); ++it1) {
+		string str1 = it1->first;
+		attrMap attMap;
+		attMap.numTuples = it1->second.numTuples;
+		attMap.numRel = it1->second.numRel;
 
-void Statistics::AddRel(char *relName, int numTuples)
-{
-	string rel(relName);
-	map<string, int>::iterator it = relMap.find(rel);
-
-	if (it == relMap.end()) {
-		relMap.insert(pair<string, int>(rel, numTuples));
+		for (map<string, int>::iterator it2 = it1->second.attrs.begin(); it2 != it1->second.attrs.end(); ++it2) {
+			string str2 = it2->first;
+			int n = it2->second;
+			attMap.attrs.insert(pair<string, int>(str2, n));
+		}
+		relMap.insert(pair<string, attrMap>(str1, attMap));
+		attMap.attrs.clear();
 	}
-	else {
-		it->second = numTuples;
-	}
-
 }
-void Statistics::AddAtt(char *relName, char *attName, int numDistincts)
-{
+
+Statistics::~Statistics() {}
+
+void Statistics::AddRel(char *relName, int numTuples) {
+	attrMap newRel;
+	newRel.numTuples = numTuples;
+	newRel.numRel = 1;
+	string str(relName);
+	relMap.insert(pair<string, attrMap>(str, newRel));
+}
+
+void Statistics::AddAtt(char *relName, char *attName, int numDistincts) {
 	string rel(relName);
 	string att(attName);
-	
-	if (numDistincts == -1) {
-		attrMap[relName][attName] = relMap[relName];
-	}
-	else
-		attrMap[relName][attName] = numDistincts;
+	map<string, attrMap>::iterator it = relMap.find(rel);
+	if (numDistincts == -1)
+		numDistincts = it->second.numTuples;
+	it->second.attrs.insert(pair<string, int>(att, numDistincts));
 }
-void Statistics::CopyRel(char *oldName, char *newName)
-{
-	string oldRel(oldName);
-	string newRel(newName);
 
-	relMap[newRel] = relMap[oldRel];
-	
-	map<string, int> oldAttrMap = attrMap[oldRel];
-
-	for (map<string, int>::iterator it = oldAttrMap.begin(); it != oldAttrMap.end(); ++it) {
-
-		string newAtt = newRel + "." + it->first;
-		attrMap[newRel][newAtt] = it->second;
+void Statistics::CopyRel(char *oldName, char *newName) {
+	string old(oldName);
+	string newname(newName);
+	map<string, attrMap>::iterator it = relMap.find(old);
+	attrMap newRel;
+	newRel.numTuples = it->second.numTuples;
+	newRel.numRel = it->second.numRel;
+	for (map<string, int>::iterator it2 = it->second.attrs.begin(); it2 != it->second.attrs.end(); ++it2) {
+		char * newatt = new char[200];
+		sprintf(newatt, "%s.%s", newName, it2->first.c_str());
+		string temp(newatt);
+		newRel.attrs.insert(pair<string, int>(newatt, it2->second));
 	}
+	relMap.insert(pair<string, attrMap>(newname, newRel));
 }
-	
-void Statistics::Read(char *fromWhere)
-{
+
+void Statistics::Read(char *fromWhere) {
+	//FILE* inFile;
 	string file(fromWhere);
-
-		
-
-	int relCountInRel, relCountInAttr;
-
-	/*if (!inFile)
-		return;*/
-
 	ifstream inFile;
-	inFile.open(file.c_str(), ios::in);
-
-	string line;
-	inFile >> line;
-	relCountInRel = atoi(line.c_str());
-
-	relMap.clear();
-
-	for (int i = 0; i < relCountInRel; i++)
-	{
-		inFile >> line;
-
-		size_t splitPos = line.find_first_of("#");
-		string first = line.substr(0, splitPos);
-		string sec = line.substr(splitPos + 1);
-
-		relMap[first] = atoi(sec.c_str());
-	}
-
-	inFile >> line;
-
-	relCountInAttr = atoi(line.c_str());
-
-	attrMap.clear();
-
-	string relName, attrName, numDistincts;
-
-	while (!inFile.eof()) {
-			
-		attrMap[relName][attrName] = atoi(numDistincts.c_str());
-		inFile >> relName >> attrName >> numDistincts;
-	}
-
-	inFile.close();
 	
-}
-void Statistics::Write(char *fromWhere)
-{
-	string file(fromWhere);
-	remove(fromWhere);
+	inFile.open(file.c_str(), ios::in);
+	
+	string line;
+	char relchar[200];
+	int n;
+	inFile >> line;
+	while (strcmp(line.c_str(), "end")) {
+		if (!strcmp(line.c_str(), "rel")) {
+			attrMap attMap;
+			attMap.numRel = 1;
+			inFile >> line;
+			string relstr(line);
+			strcpy(relchar, relstr.c_str());
+			inFile >> line;
+			attMap.numTuples = atoi(line.c_str());
+			inFile >> line;
+			inFile >> line;
 
-	ofstream outFile;
-	outFile.open(file.c_str(), ios::out);
-
-	outFile << relMap.size() << "\n";
-
-	for (map<string,int>::iterator it = relMap.begin(); it != relMap.end(); it++)
-	{	
-		const char *first = it->first.c_str();
-		outFile << first << "#" << it->second << "\n";
-	}
-
-	outFile << attrMap.size() << "\n";
-
-	for (map<string, map<string, int>>::iterator it1 = attrMap.begin(); it1 != attrMap.end(); ++it1)
-	{		
-		//map<string, int> attr = it1->second;
-		/*outFile << attr.size() << "\n";*/
-
-		for (map<string, int>::iterator it2 = it1->second.begin(); it2 != it1->second.end(); ++it2)
-		{
-			const char *first = it1->first.c_str();
-			const char *sec = it2->first.c_str();			
-			outFile << first << " " << sec << " " << it2->second << "\n";
+			while (strcmp(line.c_str(), "rel") && strcmp(line.c_str(), "end")) {
+				string attstr(line);
+				inFile >> line;
+				n = atoi(line.c_str());
+				attMap.attrs.insert(pair<string, int>(attstr, n));
+				inFile >> line;
+			}
+			relMap.insert(pair<string, attrMap>(relstr, attMap));
 		}
 	}
+	inFile.close();
+}
 
+void Statistics::Write(char *fromWhere) {
+	//FILE* outFile;
+	string file(fromWhere);
+	ofstream outFile;
+	outFile.open(file.c_str(), ios::out);
+	for (map<string, attrMap>::iterator it1 = relMap.begin(); it1 != relMap.end(); ++it1) {
+		char * write = new char[it1->first.length() + 1];
+		strcpy(write, it1->first.c_str());
+		/*fprintf(outFile, "rel\n%s\n", write);*/
+		outFile << "rel\n" << write << "\n";
+		/*fprintf(outFile, "%d\nattrs\n", it1->second.numTuples);*/
+		outFile << "\nattrs\n" << it1->second.numTuples << "\n";
+		for (map<string, int>::iterator it2 = it1->second.attrs.begin(); it2 != it1->second.attrs.end(); ++it2) {
+			char * att = new char[it2->first.length() + 1];
+			strcpy(att, it2->first.c_str());
+			//fprintf(outFile, "%s\n%d\n", att, it2->second);
+			outFile << "\nattrs\n" << it2->second << "\n";
+		}
+	}
+	
+	outFile << "end\n";
 	outFile.close();
 }
 
-void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin)
-{
-	calledFromApply = true;
-	isApply = true;
-	Estimate(parseTree, relNames, numToJoin);
-	calledFromApply = false;
-	isApply = false;
-}
-double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin)
-{
-
-	double resultEstimate = 0.0;
-
-	struct AndList *currentAnd;
-	struct OrList *currentOr;
-
-	currentAnd = parseTree;
-
-	string leftRel;
-	string rightRel;
-
-	string leftAttr;
-	string rightAttr;
-
-	string joinLeftRel, joinRightRel;
-
-	bool isJoin = false;
-	bool isJoinPerformed = false;
-
-	bool isDep = false;
-	bool done = false;
-	string prev;
-
-	double resAndFactor = 1.0;
-	double resOrFactor = 1.0;
-
-	map<string, int> relOpMap;
-
+void  Statistics::Apply(struct AndList *parseTree, char *relNames[], int numToJoin) {
+	struct AndList * currentAnd = parseTree;
+	struct OrList * currentOr;
 	while (currentAnd != NULL) {
+		if (currentAnd->left != NULL) {
+			currentOr = currentAnd->left;
+			while (currentOr != NULL) {
+				if (currentOr->left->left->code == 3 && currentOr->left->right->code == 3) {//
+					map<string, int>::iterator itAtt[2];
+					map<string, attrMap>::iterator itRel[2];
 
-		currentOr = currentAnd->left;
-		resOrFactor = 1.0;
-
-		while (currentOr != NULL) {
-
-			isJoin = false;
-			ComparisonOp *curCompOp = currentOr->left;
-
-			if (curCompOp->left->code != NAME) {
-				cout << "Not possible" << endl;
-				return 0;
-			}
-
-			leftAttr = curCompOp->left->value;
-
-#ifdef DEP
-			if (strcmp(leftAttr.c_str(), prev.c_str()) == 0)
-				isDep = true;
-
-			prev = leftAttr;
-#endif //DEP
-
-			for (map<string, map<string, int>>::iterator it = attrMap.begin(); it != attrMap.end(); it++) {
-				
-				if (attrMap[it->first].count(leftAttr) > 0) {
-					leftRel = it->first;
-					break;
-				}
-			}
-			
-			if (curCompOp->right->code == NAME) {
-				isJoin = true;
-				isJoinPerformed = true;
-				rightAttr = curCompOp->right->value;
-
-				for (map<string, map<string, int>>::iterator it = attrMap.begin(); it != attrMap.end(); it++) {
-
-					if (attrMap[it->first].count(rightAttr) > 0) {
-						rightRel = it->first;
-						break;
+					string joinAtt1(currentOr->left->left->value);
+					string joinAtt2(currentOr->left->right->value);
+					for (map<string, attrMap>::iterator it2 = relMap.begin(); it2 != relMap.end(); ++it2) {
+						itAtt[0] = it2->second.attrs.find(joinAtt1);
+						if (itAtt[0] != it2->second.attrs.end()) {
+							itRel[0] = it2;
+							break;
+						}
 					}
-				}				
-			}
-
-			if (isJoin == true) {
-
-				double leftCount = attrMap[leftRel][curCompOp->left->value];
-				double rightCount = attrMap[rightAttr][curCompOp->right->value];
-
-				if (curCompOp->code == EQUALS) {
-					resOrFactor *= (1.0 - (1.0 / max(leftCount, rightCount)));
-				}
-
-				joinLeftRel = leftRel;
-				joinRightRel = rightRel;
-			}
-			else {
-#ifdef DEP
-				if (isDep) {
-
-					if (!done) {
-						resOrFactor = 1.0 - resOrFactor;
-						done = true;
+					for (map<string, attrMap>::iterator it2 = relMap.begin(); it2 != relMap.end(); ++it2) {
+						itAtt[1] = it2->second.attrs.find(joinAtt2);
+						if (itAtt[1] != it2->second.attrs.end()) {
+							itRel[1] = it2;
+							break;
+						}
 					}
-
-					if (curCompOp->code == GREATER_THAN || curCompOp->code == LESS_THAN) {
-						resOrFactor += (1.0 / 3.0);
-						relOpMap[curCompOp->left->value] = curCompOp->code;
+					attrMap joinedRel;
+					char * joinName = new char[200];
+					sprintf(joinName, "%s|%s", itRel[0]->first.c_str(), itRel[1]->first.c_str());
+					string joinNamestr(joinName);
+					joinedRel.numTuples = tempRes;
+					joinedRel.numRel = numToJoin;
+					for (int i = 0; i < 2; i++) {
+						for (map<string, int>::iterator it2 = itRel[i]->second.attrs.begin(); it2 != itRel[i]->second.attrs.end(); ++it2) {
+							joinedRel.attrs.insert(*it2);
+						}
+						relMap.erase(itRel[i]);
 					}
-					if (curCompOp->code == EQUALS) {
-						resOrFactor += (1.0 / (attrMap[leftRel][curCompOp->left->value]));
-						relOpMap[curCompOp->left->value] = curCompOp->code;
-					}
+					relMap.insert(pair<string, attrMap>(joinNamestr, joinedRel));
 				}
 				else {
-
-					if (curCompOp->code == GREATER_THAN || curCompOp->code == LESS_THAN) {
-						resOrFactor *= (2.0 / 3.0);
-						relOpMap[curCompOp->left->value] = curCompOp->code;
+					string seleAtt(currentOr->left->left->value);
+					map<string, int>::iterator itAtt;
+					map<string, attrMap>::iterator itRel;
+					for (map<string, attrMap>::iterator it2 = relMap.begin(); it2 != relMap.end(); ++it2) {
+						itAtt = it2->second.attrs.find(seleAtt);
+						if (itAtt != it2->second.attrs.end()) {
+							itRel = it2;
+							break;
+						}
 					}
+					itRel->second.numTuples = tempRes;
 
-					if (curCompOp->code == EQUALS) {
-						resOrFactor *= (1.0 - (1.0 / attrMap[leftRel][curCompOp->left->value]));
-						relOpMap[curCompOp->left->value] = curCompOp->code;
-					}
 				}
-#else
-				if (curCompOp->code == GREATER_THAN || curCompOp->code == LESS_THAN) {
-					resOrFactor *= (2.0 / 3.0);
-					relOpMap[curCompOp->left->value] = curCompOp->code;
-				}
-
-				if (curCompOp->code == EQUALS) {
-					resOrFactor *= (1.0 - (1.0 / attrMap[leftRel][curCompOp->left->value]));
-					relOpMap[curCompOp->left->value] = curCompOp->code;
-				}
-#endif //DEP
+				currentOr = currentOr->rightOr;
 			}
-
-			currentOr = currentOr->rightOr;
 		}
-
-#ifdef DEP
-		if (!isDep)
-			resOrFactor = 1.0 - resOrFactor;
-#else
-		resOrFactor = 1.0 - resOrFactor;
-#endif // DEP
-
-		isDep = false;
-		done = false;
-		resAndFactor *= resOrFactor;
 		currentAnd = currentAnd->rightAnd;
 	}
+}
 
-	double rightTupCount = relMap[rightRel];
-
-	if (isJoinPerformed == true) {
-		double leftTupCount = relMap[joinLeftRel];
-		resultEstimate = leftTupCount * rightTupCount * resAndFactor;
+double Statistics::Estimate(struct AndList *parseTree, char **relNames, int numToJoin) {
+	struct AndList * currentAnd = parseTree;
+	struct OrList * currentOr;
+	double result = 0.0, fraction = 1.0;
+	int state = 0;
+	if (currentAnd == NULL) {
+		if (numToJoin > 1) return -1;
+		
+		
+		return relMap[relNames[0]].numTuples;
 	}
-	else {
-		double leftTupCount = relMap[leftRel];
-		resultEstimate = leftTupCount * resAndFactor;
-	}
+	while (currentAnd != NULL) {
+		if (currentAnd->left != NULL) {
+			currentOr = currentAnd->left;
+			double fractionOr = 0.0;
+			map<string, int>::iterator lastAtt;
+			while (currentOr != NULL) {
+				if (currentOr->left->left->code == 3 && currentOr->left->right->code == 3) {
+					map<string, int>::iterator itAtt[2];
+					map<string, attrMap>::iterator itRel[2];
+					string joinAtt1(currentOr->left->left->value);
+					string joinAtt2(currentOr->left->right->value);
 
-	if (isApply) {
-
-		set<string> joinSet;
-		if (isJoinPerformed) {
-			
-			for (map<string, int>::iterator it1 = relOpMap.begin(); it1 != relOpMap.end(); it1++) {
-
-				for (int i = 0; i < relMap.size(); i++) {
-
-					if(i >= sizeof(relNames) / 2)
-						continue;
-					int count = attrMap[relNames[i]].count(it1->first);
-					
-					if (count == 0)
-						continue;
-					else if (count == 1) {
-
-						for (map<string, int>::iterator it2 = attrMap[relNames[i]].begin(); it2 != attrMap[relNames[i]].end(); it2++) {
-							if (it1->second == LESS_THAN || it1->second == GREATER_THAN) {
-								attrMap[joinLeftRel + "_" + joinRightRel][it2->first] = (int)round((double)it2->second / 3.0);
-							}
-							else if (it1->second == EQUALS) {
-								if (it1->first == it2->first) {
-									attrMap[joinLeftRel + "_" + joinRightRel][it2->first] = 1;
-								}
-								else {
-									attrMap[joinLeftRel + "_" + joinRightRel][it2->first] = min((int)round(resultEstimate), it2->second);
-								}
-							}							
+					for (map<string, attrMap>::iterator it2 = relMap.begin(); it2 != relMap.end(); ++it2) {
+						itAtt[0] = it2->second.attrs.find(joinAtt1);
+						if (itAtt[0] != it2->second.attrs.end()) {
+							itRel[0] = it2;
+							break;
 						}
-						break;
 					}
-					else {
-						for (map<string, int>::iterator it2 = attrMap[relNames[i]].begin(); it2 != attrMap[relNames[i]].end(); it2++) {
-							if (it1->second == EQUALS) {
-								if (it1->first == it2->first) {
-									attrMap[joinLeftRel + "_" + joinRightRel][it2->first] = count;
-								}
-								else
-									attrMap[joinLeftRel + "_" + joinRightRel][it2->first] = min((int) round(resultEstimate), it2->second);
-							}
+					for (map<string, attrMap>::iterator it2 = relMap.begin(); it2 != relMap.end(); ++it2) {
+						itAtt[1] = it2->second.attrs.find(joinAtt2);
+						if (itAtt[1] != it2->second.attrs.end()) {
+							itRel[1] = it2;
+							break;
 						}
-						break;
 					}
-					joinSet.insert(relNames[i]);
-				}
-			}
 
-			if (joinSet.count(joinLeftRel) == 0) {
-				for (map<string, int>::iterator it = attrMap[joinLeftRel].begin(); it != attrMap[joinLeftRel].end(); it++) {
-					attrMap[joinLeftRel + "_" + joinRightRel][it->first] = it->second;
-				}
-			}
-			if (joinSet.count(joinRightRel) == 0) {
-				for (map<string, int>::iterator it = attrMap[joinRightRel].begin(); it != attrMap[joinRightRel].end(); it++) {
-					attrMap[joinLeftRel + "_" + joinRightRel][it->first] = it->second;
-				}
-			}
+					double max;
+					if (itAtt[0]->second >= itAtt[1]->second)		max = (double)itAtt[0]->second;
+					else		max = (double)itAtt[1]->second;
+					if (state == 0)
+						result = (double)itRel[0]->second.numTuples*(double)itRel[1]->second.numTuples / max;
+					else
+						result = result * (double)itRel[1]->second.numTuples / max;
 
-			relMap[joinLeftRel + "_" + joinRightRel] = round(resultEstimate);
-			relMap.erase(joinLeftRel);
-			relMap.erase(joinRightRel);
-
-			attrMap.erase(joinLeftRel);
-			attrMap.erase(joinRightRel);
-		}			
+					//cout << "max " << max << endl;
+					//cout << "join result: " << result << endl;
+					state = 1;
+				}
+				else {
+					string seleAtt(currentOr->left->left->value);
+					map<string, int>::iterator itAtt;
+					map<string, attrMap>::iterator itRel;
+					for (map<string, attrMap>::iterator it2 = relMap.begin(); it2 != relMap.end(); ++it2) {
+						itAtt = it2->second.attrs.find(seleAtt);
+						if (itAtt != it2->second.attrs.end()) {
+							itRel = it2;
+							break;
+						}
+					}
+					if (result == 0.0)
+						result = ((double)itRel->second.numTuples);
+					double tempFrac;
+					if (currentOr->left->code == 7)
+						tempFrac = 1.0 / itAtt->second;
+					else
+						tempFrac = 1.0 / 3.0;
+					if (lastAtt != itAtt)
+						fractionOr = tempFrac + fractionOr - (tempFrac*fractionOr);
+					else
+						fractionOr += tempFrac;
+					//cout << "fracOr: " << fractionOr << endl;
+					lastAtt = itAtt;//
+				}
+				currentOr = currentOr->rightOr;
+			}
+			if (fractionOr != 0.0)
+				fraction = fraction * fractionOr;
+			//cout << "frac: " << fraction << endl;
+		}
+		currentAnd = currentAnd->rightAnd;
 	}
-	return resultEstimate;
+	result = result * fraction;
+	//cout << "result " << result << endl;
+	tempRes = result;
+	return result;
 }
 

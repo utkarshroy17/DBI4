@@ -1,7 +1,8 @@
 
 #include <iostream>
 #include "ParseTree.h"
-#include "Statistics.h"
+//#include "Statistics.h"
+#include "QueryPlan.h"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ int main () {
 
 	s.Read(fileName);
 
-
+	QueryPlan plan(&s);
 	return 0;
 	
 }
